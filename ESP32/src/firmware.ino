@@ -5,6 +5,8 @@
  * Velocidad de transmisión: 460,800 baudios
  */
 
+#include <Arduino.h>
+
 /// Pines de funcionamiento
 #define EXCITACION_PIN 5   /// Pin de señal al mosfet
 #define SENSOR_PIN 34      /// pin de señal del circuito
