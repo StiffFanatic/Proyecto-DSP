@@ -649,34 +649,43 @@ class MainWindow:
             y_filt = self.processor.lowpass(y, fc=100)
             y_norm = self.processor.normalize(y_filt)
 
-            # FFT
-            freqs, mag = self.fft_analyzer.compute_fft(y_norm)
+            # FFT con derivada + suavizado
+            freqs, mag, mag_smooth = self.fft_analyzer.compute_fft_escalon(y_norm)
+
+            # Buscar pico en espectro suavizado, ignorando DC
+            umbral_dc_hz = 2.0
+            idx_inicio = max(np.argmax(freqs > umbral_dc_hz), 1)
+
+            idx_peak = idx_inicio + np.argmax(mag_smooth[idx_inicio:])
+            f_peak   = freqs[idx_peak]
+            m_peak   = mag[idx_peak]
+
+            print(f"  pico detectado: {f_peak:.2f} Hz  mag={m_peak:.4f}")
+            if self.params is not None:
+                print(f"  fn estimada   : {self.params['wn']/(2*np.pi):.2f} Hz")
+
+            # Rango del eje X: 5× el pico, mínimo 20 Hz
+            x_max = min(max(f_peak * 5, 20), self.fs / 2)
+
+            # Rango del eje Y: máximo real dentro del rango visible
+            mask      = (freqs >= freqs[idx_inicio]) & (freqs <= x_max)
+            y_max_vis = mag[mask].max() if mask.any() else m_peak
 
             # Gráfica
             self.ax.clear()
-            self.ax.plot(freqs, mag, linewidth=2)
+            self.ax.plot(freqs[idx_inicio:], mag[idx_inicio:],
+                        linewidth=1.5, alpha=0.6, color='steelblue', label='FFT')
+            self.ax.plot(freqs[idx_inicio:], mag_smooth[idx_inicio:],
+                        linewidth=2, color='orange', label='Suavizado')
             self.ax.set_title("Espectro de Frecuencia (FFT)")
             self.ax.set_xlabel("Frecuencia (Hz)")
             self.ax.set_ylabel("Magnitud")
             self.ax.grid(True)
 
-          # Zoom alrededor de la frecuencia dominante (ignorando DC en bin 0)
-            # Buscar pico solo en frecuencias > 0
-            idx_inicio = np.argmax(freqs > 0)          # primer bin con f > 0 Hz
-            idx_peak = idx_inicio + np.argmax(mag[idx_inicio:])
-            f_peak = freqs[idx_peak]
+            self.ax.set_xlim(0, x_max)
+            self.ax.set_ylim(0, y_max_vis * 1.3)
 
-            # Si el pico encontrado es muy pequeño (señal muy amortiguada),
-            # usar la frecuencia natural estimada como referencia
-            if f_peak < 1.0 and self.params is not None:
-                f_peak = self.params['wn'] / (2 * np.pi)   # ωn → Hz
-
-            margen = max(f_peak * 4, 10)
-            self.ax.set_xlim(0, min(margen, self.fs / 2))
-            self.ax.set_ylim(0, max(mag[idx_inicio:]) * 1.3)
-
-            # Marcar el pico
-            self.ax.plot(f_peak, mag[idx_peak], 'r*', markersize=12,
+            self.ax.plot(f_peak, m_peak, 'r*', markersize=12,
                         label=f'Pico: {f_peak:.2f} Hz')
             self.ax.axvline(x=f_peak, color='g', linestyle=':', alpha=0.5)
             self.ax.legend(loc='upper right', fontsize=9)
