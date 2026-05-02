@@ -1,7 +1,12 @@
 ﻿Proyecto DSP
 ==============
 
-Aplicación para adquisición y análisis de señales de un sistema RLC subamortiguado.
+Objetivo del proyecto:
+
+Desarrollar un sistema con interfaz gráfica para la adquisición, visualización ya 
+análisis digital de señales en un circuito RLC, utilizando ESP32 y 
+procesamiento en Python para facilitar el aprendizaje de los estudiantes de los 
+circuitos de segundo orden.
 
 ## Integrantes
 - Juan Manuel Gonzalez Banguero
