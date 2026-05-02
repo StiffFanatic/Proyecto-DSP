@@ -28,5 +28,6 @@ class ButtonManager:
         DSPButton(self.frame, "Cargar Datos Prueba", "#27ae60", self.main.cargar_datos_prueba)
         DSPButton(self.frame, "Borrar", "#e74c3c", self.main.borrar)
         DSPButton(self.frame, "Mostrar Análisis", "#e67e22", self.main.mostrar_analisis)
+        DSPButton(self.frame, "FFT", "#f39c12", self.main.mostrar_fft)
         DSPButton(self.frame, "Simular", "#9b59b6", self.main.simular)
         DSPButton(self.frame, "Salir", "#7f8c8d", self.main.root.destroy)

@@ -15,6 +15,7 @@ from Procesamiento.data import DataIO
 from Procesamiento.filtro import SignalProcessor
 from Procesamiento.parametros_dinamicos import SystemIdentifier
 from Procesamiento.fdt import TransferFunctionEstimator
+from Procesamiento.fft import FFTAnalyzer
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -42,11 +43,14 @@ class MainWindow:
         self.G_est = None
         self.params = None
         self.rlc_params = None
+        self.data_origen = None
+        
 
         # ---------- OBJETOS ----------
         self.sampler = muestreo.RLCSampler()
         self.data_io = DataIO()
         self.processor = SignalProcessor(self.fs)
+        self.fft_analyzer = FFTAnalyzer(self.fs)
 
         self._create_layout()
         self._create_plot()
@@ -209,6 +213,9 @@ class MainWindow:
 
                     # Visualiza datos raw en la gráfica
                     self.plot_signal(self.v_raw)
+                    self.data_origen = "serial"
+                
+
             except Exception as e:
                 print(f"❌ Error capturando escalón: {e}")
 
@@ -241,6 +248,10 @@ class MainWindow:
                     
                     # Visualizar datos en la gráfica
                     self.plot_signal(self.v_raw)
+
+                    self.v_load = self.v_raw
+                    self.data_origen = "archivo"
+
                 else:
                     print("❌ No se encontraron archivos de prueba. Ejecute 'python test_proyecto.py' primero.")
             else:
@@ -520,6 +531,9 @@ class MainWindow:
             
             # Mostrar función de transferencia en la ventana
             self._mostrar_funcion_transferencia_teorica(wn, zeta)
+
+            self.v_sim = y_resp
+            self.data_origen = "simulacion"
             
             print("✅ Simulación completada y gráfica actualizada")
             
@@ -611,3 +625,63 @@ class MainWindow:
         canvas = FigureCanvasTkAgg(fig, master=self.eq_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)
+
+    def mostrar_fft(self):
+        try:
+            if self.data_origen is None:
+                print("⚠️ No hay datos para FFT")
+                return
+
+            if self.data_origen == "serial":
+                y = self.v_raw
+                print("📡 FFT de datos reales (puerto serial)")
+            elif self.data_origen == "simulacion":
+                y = self.v_sim
+                print("🧪 FFT de señal simulada")
+            elif self.data_origen == "archivo":
+                y = self.v_load
+                print("📂 FFT de datos cargados desde archivo")
+            else:
+                print("❌ Origen de datos desconocido")
+                return
+
+            # Preprocesamiento
+            y_filt = self.processor.lowpass(y, fc=100)
+            y_norm = self.processor.normalize(y_filt)
+
+            # FFT
+            freqs, mag = self.fft_analyzer.compute_fft(y_norm)
+
+            # Gráfica
+            self.ax.clear()
+            self.ax.plot(freqs, mag, linewidth=2)
+            self.ax.set_title("Espectro de Frecuencia (FFT)")
+            self.ax.set_xlabel("Frecuencia (Hz)")
+            self.ax.set_ylabel("Magnitud")
+            self.ax.grid(True)
+
+          # Zoom alrededor de la frecuencia dominante (ignorando DC en bin 0)
+            # Buscar pico solo en frecuencias > 0
+            idx_inicio = np.argmax(freqs > 0)          # primer bin con f > 0 Hz
+            idx_peak = idx_inicio + np.argmax(mag[idx_inicio:])
+            f_peak = freqs[idx_peak]
+
+            # Si el pico encontrado es muy pequeño (señal muy amortiguada),
+            # usar la frecuencia natural estimada como referencia
+            if f_peak < 1.0 and self.params is not None:
+                f_peak = self.params['wn'] / (2 * np.pi)   # ωn → Hz
+
+            margen = max(f_peak * 4, 10)
+            self.ax.set_xlim(0, min(margen, self.fs / 2))
+            self.ax.set_ylim(0, max(mag[idx_inicio:]) * 1.3)
+
+            # Marcar el pico
+            self.ax.plot(f_peak, mag[idx_peak], 'r*', markersize=12,
+                        label=f'Pico: {f_peak:.2f} Hz')
+            self.ax.axvline(x=f_peak, color='g', linestyle=':', alpha=0.5)
+            self.ax.legend(loc='upper right', fontsize=9)
+
+            self.canvas.draw()
+
+        except Exception as e:
+            print(f"❌ Error FFT: {e}")

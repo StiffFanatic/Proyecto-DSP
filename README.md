@@ -3,7 +3,7 @@
 
 Objetivo del proyecto:
 
-Desarrollar un sistema con interfaz gráfica para la adquisición, visualización ya 
+Desarrollar un sistema con interfaz gráfica para la adquisición, visualización y a 
 análisis digital de señales en un circuito RLC, utilizando ESP32 y 
 procesamiento en Python para facilitar el aprendizaje de los estudiantes de los 
 circuitos de segundo orden.
