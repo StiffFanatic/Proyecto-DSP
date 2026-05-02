@@ -1,0 +1,12 @@
+# Entornos virtuales
+venv/
+.env/
+.venv/
+
+# Archivos compilados
+__pycache__/
+*.pyc
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
