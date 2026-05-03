@@ -644,7 +644,7 @@ class MainWindow:
                 y = self.v_load
                 print(" FFT de datos cargados desde archivo")
             else:
-                print("❌ Origen de datos desconocido")
+                print(" Origen de datos desconocido")
                 return
 
             # Preprocesamiento
