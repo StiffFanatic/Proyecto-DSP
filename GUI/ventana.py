@@ -104,7 +104,7 @@ class MainWindow:
             self.icon_label.place(relx=0.98, rely=0.02, anchor="ne")
 
         except Exception as e:
-            print("❌ Error cargando icono GUI:", e)
+            print("Error cargando icono GUI:", e)
 
     # ---------- GRÁFICA ----------
     def _create_plot(self):
@@ -191,9 +191,9 @@ class MainWindow:
     def conectar_serial(self):
         try:
             self.sampler.conectar()
-            print("✅ Conectado al ESP32")
+            print("Conectado al ESP32")
         except Exception as e:
-            print("❌ Error de conexión:", e)
+            print("Error de conexión:", e)
 
     def capturar_escalon(self):
         """Genera y captura la respuesta al escalón usando el MOSFET en el ESP32."""
@@ -202,22 +202,23 @@ class MainWindow:
                 self.v_raw = self.sampler.capturar_paso()
 
                 if self.v_raw is not None and len(self.v_raw) > 0:
-                    print(f"📈 Captura de escalón: {len(self.v_raw)} muestras")
+                    print(f"Captura de escalón: {len(self.v_raw)} muestras")
 
                     t = np.linspace(0, len(self.v_raw) / self.fs, len(self.v_raw))
                     path = self.data_io.save(t, self.v_raw)
-                    print(f"💾 Datos guardados en: {path}")
+                    print(f"Datos guardados en: {path}")
 
                     # Limpiar parámetros anteriores al capturar nueva señal
                     self.limpiar_parametros()
 
                     # Visualiza datos raw en la gráfica
                     self.plot_signal(self.v_raw)
+                    # Indicar que los datos actuales provienen de la captura serial para que la FFT sepa qué analizar
                     self.data_origen = "serial"
                 
 
             except Exception as e:
-                print(f"❌ Error capturando escalón: {e}")
+                print(f"Error capturando escalón: {e}")
 
         threading.Thread(target=tarea, daemon=True).start()
 
@@ -239,7 +240,7 @@ class MainWindow:
                     t, v = self.data_io.load(path_completo)
                     self.v_raw = v
                     
-                    print(f"✅ Datos de prueba cargados: {len(self.v_raw)} muestras desde {archivo_prueba}")
+                    print(f"   Datos de prueba cargados: {len(self.v_raw)} muestras desde {archivo_prueba}")
                     print(f"   Duración: {t[-1]:.3f} segundos")
                     print(f"   Fs efectiva: {len(self.v_raw)/(t[-1]-t[0]):.1f} Hz")
                     
@@ -253,12 +254,12 @@ class MainWindow:
                     self.data_origen = "archivo"
 
                 else:
-                    print("❌ No se encontraron archivos de prueba. Ejecute 'python test_proyecto.py' primero.")
+                    print("No se encontraron archivos de prueba. Ejecute 'python test_proyecto.py' primero.")
             else:
-                print("❌ Carpeta de datos no existe. Ejecute 'python test_proyecto.py' primero.")
+                print("Carpeta de datos no existe. Ejecute 'python test_proyecto.py' primero.")
                 
         except Exception as e:
-            print(f"❌ Error cargando datos de prueba: {e}")
+            print(f"Error cargando datos de prueba: {e}")
 
     def calcular_parametros_rlc(self, zeta, wn, C_asumido=1e-6):
         """
@@ -322,7 +323,7 @@ class MainWindow:
 
     def mostrar_analisis(self):
         if self.v_raw is None or len(self.v_raw) == 0:
-            print("⚠️ No hay datos para analizar. Capture datos primero.")
+            print(" No hay datos para analizar. Capture datos primero.")
             return
 
         t = np.linspace(0, len(self.v_raw) / self.fs, len(self.v_raw))
@@ -332,13 +333,13 @@ class MainWindow:
             y_filt = self.processor.lowpass(self.v_raw, fc=100)
             y_norm = self.processor.normalize(y_filt)
             
-            print("✅ Filtrado exitoso (Butterworth lowpass, fc=100Hz)")
+            print(" Filtrado exitoso (Butterworth lowpass, fc=100Hz)")
 
             # Identificación del sistema
             identifier = SystemIdentifier(t, y_norm)
             self.params = identifier.estimate_second_order()
 
-            print("📊 Parámetros estimados:")
+            print("Parámetros estimados:")
             print(f"  ζ  = {self.params['zeta']:.3f}")
             print(f"  ωn = {self.params['wn']:.3f} rad/s")
             print(f"  Mp = {self.params['Mp']:.3f}")
@@ -351,7 +352,7 @@ class MainWindow:
             )
             self.rlc_params = rlc_params
             
-            print("🔧 Parámetros RLC calculados (C asumido = 1μF):")
+            print(" Parámetros RLC calculados (C asumido = 1μF):")
             print(f"  R = {rlc_params['R']:.1f} Ω")
             print(f"  L = {rlc_params['L']*1000:.1f} mH")
             print(f"  C = {rlc_params['C']*1e6:.0f} μF")
@@ -363,7 +364,7 @@ class MainWindow:
             )
             self.G_est = tf_est.get_transfer_function()
 
-            print("📐 Función de transferencia estimada:")
+            print("Función de transferencia estimada:")
             print(self.G_est)
             
             # Mostrar función de transferencia estimada en la ventana
@@ -376,9 +377,9 @@ class MainWindow:
             self.actualizar_display_parametros()
             
         except ValueError as e:
-            print(f"❌ Error en la estimación: {e}")
+            print(f"Error en la estimación: {e}")
         except Exception as e:
-            print(f"❌ Error inesperado: {e}")
+            print(f"Error inesperado: {e}")
 
     def simular(self):
         """Abre diálogo para ingresar R, L, C o usa estimación previa."""
@@ -429,7 +430,7 @@ class MainWindow:
                 self._ejecutar_simulacion(R, L, C)
                 dialog.destroy()
             except ValueError as e:
-                print(f"❌ Error en parámetros: {e}")
+                print(f"Error en parámetros: {e}")
 
         tk.Button(btn_frame, text="Simular", command=simular_con_parametros, width=10).pack(side="left", padx=5)
         tk.Button(btn_frame, text="Cancelar", command=dialog.destroy, width=10).pack(side="left", padx=5)
@@ -442,7 +443,7 @@ class MainWindow:
             wn = 1 / np.sqrt(L * C)
             zeta = R / (2 * np.sqrt(L / C))
             
-            print(f"📊 Parámetros RLC ingresados:")
+            print(f" Parámetros RLC ingresados:")
             print(f"  R = {R} Ω")
             print(f"  L = {L} H")
             print(f"  C = {C} F")
@@ -459,7 +460,7 @@ class MainWindow:
             # G(s) = ωn² / (s² + 2ζωnS + ωn²)
             tf_teorica = TransferFunctionEstimator(zeta, wn).get_transfer_function()
             
-            print(f"\n📐 Función de transferencia teórica:")
+            print(f"\nFunción de transferencia teórica:")
             print(tf_teorica)
             
             # Simular respuesta al escalón - Enfocarse en la respuesta transitoria
@@ -533,9 +534,10 @@ class MainWindow:
             self._mostrar_funcion_transferencia_teorica(wn, zeta)
 
             self.v_sim = y_resp
+            # Indicar que los datos actuales provienen de la simulación para que la FFT sepa qué analizar
             self.data_origen = "simulacion"
             
-            print("✅ Simulación completada y gráfica actualizada")
+            print("Simulación completada y gráfica actualizada")
             
         except Exception as e:
             print(f"❌ Error en simulación: {e}")
@@ -608,7 +610,7 @@ class MainWindow:
             widget.destroy()
         self.mostrar_funcion_canonica()
 
-        print("🧹 Gráfica y parámetros borrados")
+        print("Gráfica y parámetros borrados")
 
     def mostrar_funcion_canonica(self):
         fig = Figure(figsize=(6, 1.2), dpi=100)
@@ -629,18 +631,18 @@ class MainWindow:
     def mostrar_fft(self):
         try:
             if self.data_origen is None:
-                print("⚠️ No hay datos para FFT")
+                print(" No hay datos para FFT")
                 return
 
             if self.data_origen == "serial":
                 y = self.v_raw
-                print("📡 FFT de datos reales (puerto serial)")
+                print(" FFT de datos reales (puerto serial)")
             elif self.data_origen == "simulacion":
                 y = self.v_sim
-                print("🧪 FFT de señal simulada")
+                print(" FFT de señal simulada")
             elif self.data_origen == "archivo":
                 y = self.v_load
-                print("📂 FFT de datos cargados desde archivo")
+                print(" FFT de datos cargados desde archivo")
             else:
                 print("❌ Origen de datos desconocido")
                 return
@@ -693,4 +695,4 @@ class MainWindow:
             self.canvas.draw()
 
         except Exception as e:
-            print(f"❌ Error FFT: {e}")
+            print(f" Error FFT: {e}")

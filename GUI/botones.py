@@ -13,7 +13,7 @@ class DSPButton:
             height=2,
             command=command
         )
-        self.button.pack(fill="x", pady=8)
+        self.button.pack(fill="x", pady=5, padx=10)
 
 
 class ButtonManager:
