@@ -97,13 +97,14 @@ Esto crea un archivo de datos simulados y verifica que todo el pipeline de proce
    - Presione "Conectar" para establecer comunicación serial
    - Presione "Tomar Datos" para capturar la señal
 3. **Análisis**: Presione "Mostrar Análisis" para procesar los datos y estimar parámetros del sistema
+   3.1 **Espectro en frecuencia** : Precione "FFT" para ver el espectro de frecuencia de la señal.
 4. **Simulación**: Presione "Simular" para generar respuestas teóricas con parámetros RLC personalizados
 
 ## Funcionalidades
 
 1. **Adquisición de datos**: Captura señales del ESP32 vía puerto serial
 2. **Procesamiento**: Filtrado Butterworth y normalización de señales
-3. **Análisis**: Identificación de parámetros del sistema (ζ, ωn, Mp, tp) y cálculo de componentes RLC
+3. **Análisis**: Identificación de parámetros del sistema (ζ, ωn, Mp, tp), cálculo de componentes RLC y visualizacion del espectro de frecuencia de la señal.
 4. **Visualización**: Gráficas interactivas, funciones de transferencia y **display de parámetros en GUI**
 5. **Simulación**: Generación de respuestas teóricas con parámetros RLC
 
@@ -119,6 +120,7 @@ La aplicación muestra en tiempo real:
 - Visualización de señales crudas y procesadas
 - Función de transferencia teórica y estimada
 - Respuestas simuladas del sistema
+- Muestra la FFT
 
 ## Cálculo de parámetros
 
@@ -148,8 +150,7 @@ Proyecto DSP/
 ├── Adquisición_de_datos/   # Comunicación con ESP32
 ├── ESP32/                  # Firmware del ESP32 para escalón MOSFET
 ├── results/data/           # Datos guardados
-├── assets/                 # Recursos gráficos
 ├── Config/                 # Configuraciones
 ├── test_proyecto.py        # Script de pruebas
-└── requirements.txt        # Dependencias
+└── Requerimientos.txt      # Dependencias
 ```
