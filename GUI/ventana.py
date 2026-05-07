@@ -195,30 +195,51 @@ class MainWindow:
         except Exception as e:
             print("Error de conexión:", e)
 
-    def capturar_escalon(self):
+    def capturar_escalon(self, duracion=0.05, pre_delay=0.1, post_delay=0.2):
         """Genera y captura la respuesta al escalón usando el MOSFET en el ESP32."""
+
         def tarea():
+            print("Botón presionado, hilo iniciado")
+            
             try:
+                print("1️⃣ Entró al hilo")
+                print("2️⃣ sampler =", self.sampler)
+                # Captura desde el sampler (retorna voltajes en V)
+                self.v_raw = self.sampler.capturar_paso(
+                    duracion=duracion,
+                    pre_delay=pre_delay,
+                    post_delay=post_delay
+                )
+
+                print("3️⃣ Antes de capturar_paso")
                 self.v_raw = self.sampler.capturar_paso()
+                print("4️⃣ Después de capturar_paso")
 
                 if self.v_raw is not None and len(self.v_raw) > 0:
                     print(f"Captura de escalón: {len(self.v_raw)} muestras")
 
-                    t = np.linspace(0, len(self.v_raw) / self.fs, len(self.v_raw))
+                    # Tiempo total del experimento
+                    t_total = pre_delay + duracion + post_delay
+
+                    # Vector tiempo (uniforme para análisis DSP)
+                    t = np.linspace(0, t_total, len(self.v_raw))
+
+                    # Guardar datos
                     path = self.data_io.save(t, self.v_raw)
                     print(f"Datos guardados en: {path}")
 
-                    # Limpiar parámetros anteriores al capturar nueva señal
+                    # Limpiar parámetros anteriores
                     self.limpiar_parametros()
 
-                    # Visualiza datos raw en la gráfica
+                    # Visualizar señal capturada
                     self.plot_signal(self.v_raw)
-                    # Indicar que los datos actuales provienen de la captura serial para que la FFT sepa qué analizar
+
+                    # Marcar origen de datos para FFT / análisis
                     self.data_origen = "serial"
-                
 
             except Exception as e:
-                print(f"Error capturando escalón: {e}")
+                import traceback
+                traceback.print_exc()
 
         threading.Thread(target=tarea, daemon=True).start()
 
@@ -389,7 +410,7 @@ class MainWindow:
         """Crea un diálogo para ingresar R, L, C."""
         dialog = tk.Toplevel(self.root)
         dialog.title("Parámetros RLC")
-        dialog.geometry("300x250")
+        dialog.geometry("150x250")
         dialog.resizable(False, False)
 
         # Frame para inputs
