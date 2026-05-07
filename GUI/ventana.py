@@ -26,7 +26,7 @@ ICON_IMG_PATH = os.path.join(BASE_DIR, "assets", "Imagenes", "usc.ico")
 class MainWindow:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Proyecto DSP - Análisis de un sistema subamortiguado")
+        self.root.title("Proyecto DSP - Análisis de circuitos RLC")
         self.root.geometry("1100x600")
 
         print("ICON_PATH =", ICON_PATH)
@@ -66,7 +66,7 @@ class MainWindow:
 
         tk.Label(
             self.frame_left,
-            text="Sistema Subamortiguado",
+            text="Análisis de circuitos RLC",
             font=("Segoe UI", 16, "bold"),
             bg="#ecf0f1"
         ).pack(pady=10)

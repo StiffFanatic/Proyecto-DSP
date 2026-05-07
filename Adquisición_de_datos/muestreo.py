@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 class RLCSampler:
-    def __init__(self, puerto="COM3", baudios=460800, timeout=5):
+    def __init__(self, puerto="COM4", baudios=460800, timeout=5):
         self.puerto = puerto
         self.baudios = baudios
         self.timeout_captura = timeout
@@ -59,7 +59,7 @@ class RLCSampler:
 
         try:
             # Solicita al ESP32 la captura del escalón
-            comando = f"CAPTURAR_ESCALON {int(duracion*1000)} {int(pre_delay*1000)} {int(post_delay*1000)}\n"
+            comando = f"INICIAR {int(duracion*1000)} {int(pre_delay*1000)} {int(post_delay*1000)}\n"
             self.ser.write(comando.encode())
             time.sleep(0.05)
 
