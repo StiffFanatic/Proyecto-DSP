@@ -7,6 +7,7 @@ import control as ctrl
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from PIL import Image, ImageTk
+from GUI.resize import Resizer
 
 from Adquisición_de_datos import muestreo
 
@@ -21,12 +22,16 @@ from Procesamiento.fft import FFTAnalyzer
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ICON_PATH = os.path.join(BASE_DIR, "assets", "Imagenes", "usc.ico")
 ICON_IMG_PATH = os.path.join(BASE_DIR, "assets", "Imagenes", "usc.ico")
+IMG_ENT= os.path.join(BASE_DIR, "assets", "Imagenes", "grisalo.jpg")
+IMG_BT1= os.path.join(BASE_DIR, "assets", "Imagenes", "azul.jpg")
+IMG_BT2= os.path.join(BASE_DIR, "assets", "Imagenes", "rojo.jpg")
 
-
+#bt linea 420
 class MainWindow:
     def __init__(self):
+
         self.root = tk.Tk()
-        self.root.title("Proyecto DSP - Análisis de circuitos RLC")
+        self.root.title("Proyecto DSP - Análisis de un sistema subamortiguado")
         self.root.geometry("1100x600")
 
         print("ICON_PATH =", ICON_PATH)
@@ -51,7 +56,6 @@ class MainWindow:
         self.data_io = DataIO()
         self.processor = SignalProcessor(self.fs)
         self.fft_analyzer = FFTAnalyzer(self.fs)
-
         self._create_layout()
         self._create_plot()
         self.mostrar_funcion_canonica()
@@ -66,7 +70,7 @@ class MainWindow:
 
         tk.Label(
             self.frame_left,
-            text="Análisis de circuitos RLC",
+            text="Sistema Subamortiguado",
             font=("Segoe UI", 16, "bold"),
             bg="#ecf0f1"
         ).pack(pady=10)
@@ -195,51 +199,30 @@ class MainWindow:
         except Exception as e:
             print("Error de conexión:", e)
 
-    def capturar_escalon(self, duracion=0.05, pre_delay=0.1, post_delay=0.2):
+    def capturar_escalon(self):
         """Genera y captura la respuesta al escalón usando el MOSFET en el ESP32."""
-
         def tarea():
-            print("Botón presionado, hilo iniciado")
-            
             try:
-                print("1️⃣ Entró al hilo")
-                print("2️⃣ sampler =", self.sampler)
-                # Captura desde el sampler (retorna voltajes en V)
-                self.v_raw = self.sampler.capturar_paso(
-                    duracion=duracion,
-                    pre_delay=pre_delay,
-                    post_delay=post_delay
-                )
-
-                print("3️⃣ Antes de capturar_paso")
                 self.v_raw = self.sampler.capturar_paso()
-                print("4️⃣ Después de capturar_paso")
 
                 if self.v_raw is not None and len(self.v_raw) > 0:
                     print(f"Captura de escalón: {len(self.v_raw)} muestras")
 
-                    # Tiempo total del experimento
-                    t_total = pre_delay + duracion + post_delay
-
-                    # Vector tiempo (uniforme para análisis DSP)
-                    t = np.linspace(0, t_total, len(self.v_raw))
-
-                    # Guardar datos
+                    t = np.linspace(0, len(self.v_raw) / self.fs, len(self.v_raw))
                     path = self.data_io.save(t, self.v_raw)
                     print(f"Datos guardados en: {path}")
 
-                    # Limpiar parámetros anteriores
+                    # Limpiar parámetros anteriores al capturar nueva señal
                     self.limpiar_parametros()
 
-                    # Visualizar señal capturada
+                    # Visualiza datos raw en la gráfica
                     self.plot_signal(self.v_raw)
-
-                    # Marcar origen de datos para FFT / análisis
+                    # Indicar que los datos actuales provienen de la captura serial para que la FFT sepa qué analizar
                     self.data_origen = "serial"
+                
 
             except Exception as e:
-                import traceback
-                traceback.print_exc()
+                print(f"Error capturando escalón: {e}")
 
         threading.Thread(target=tarea, daemon=True).start()
 
@@ -410,35 +393,60 @@ class MainWindow:
         """Crea un diálogo para ingresar R, L, C."""
         dialog = tk.Toplevel(self.root)
         dialog.title("Parámetros RLC")
-        dialog.geometry("150x250")
+        #dialog.geometry("300x250")
         dialog.resizable(False, False)
 
         # Frame para inputs
-        frame = tk.Frame(dialog, padx=10, pady=10)
-        frame.pack(fill="both", expand=True)
+        bg="darkblue"
+        
+        ancho=6
+        alto=3
 
+        ancho_px = ancho*10
+        alto_px = alto*10
+        IMG_ET= Image.open(IMG_ENT)#.resize((ancho_px, alto_px))
+        IET1=ImageTk.PhotoImage(  IMG_ET)
+        frame= tk.Label(dialog, padx=10, pady=10)
+        
+
+        #fg=Resizer(None,IMG_ET).imgcolor()
+        fg="darkblue"
+        bg="white"
+        frame.config(bg=bg)
+        frame.pack(fill="both", expand=True)
+        
         # Resistencia (Ω)
-        tk.Label(frame, text="R (Ω):", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w", pady=5)
-        entry_r = tk.Entry(frame, width=15)
+        tk.Label(frame, text="R (Ω):",bg=bg,fg=fg, font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w", pady=5)
+        entry_r = tk.Entry(frame,bg=bg,fg=fg, width=15)
         entry_r.insert(0, "50")
         entry_r.grid(row=0, column=1, pady=5)
 
         # Inductancia (H)
-        tk.Label(frame, text="L (H):", font=("Segoe UI", 10)).grid(row=1, column=0, sticky="w", pady=5)
-        entry_l = tk.Entry(frame, width=15)
+        tk.Label(frame, text="L (H):", bg=bg,fg=fg,font=("Segoe UI", 10)).grid(row=1, column=0, sticky="w", pady=5)
+        entry_l = tk.Entry(frame,bg=bg,fg=fg, width=15)
         entry_l.insert(0, "0.1")
         entry_l.grid(row=1, column=1, pady=5)
 
         # Capacitancia (F)
-        tk.Label(frame, text="C (F):", font=("Segoe UI", 10)).grid(row=2, column=0, sticky="w", pady=5)
-        entry_c = tk.Entry(frame, width=15)
+        tk.Label(frame, text="C (F):",bg=bg,fg=fg, font=("Segoe UI", 10)).grid(row=2, column=0, sticky="w", pady=5)
+        entry_c = tk.Entry(frame,bg=bg,fg=fg,width=15)
         entry_c.insert(0, "10e-6")
         entry_c.grid(row=2, column=1, pady=5)
 
         # Botones
-        btn_frame = tk.Frame(frame)
-        btn_frame.grid(row=3, column=0, columnspan=2, pady=20)
+        ancho=6
+        alto=3
 
+        ancho_px = ancho*10
+        alto_px = alto*10
+
+        btn_frame = tk.Frame(frame,bg=bg)
+        btn_frame.grid(row=3, column=0, columnspan=2, pady=17)
+        IMG_BTx= Image.open(IMG_BT1).resize((ancho_px, alto_px))
+        IBT1=ImageTk.PhotoImage(IMG_BTx)
+        IMG_BTy= Image.open(IMG_BT2).resize((ancho_px, alto_px))
+        IBT2=ImageTk.PhotoImage(IMG_BTy)
+        #btn_frame.columnconfigure(0, weight=1)
         def simular_con_parametros():
             try:
                 R = float(entry_r.get())
@@ -452,10 +460,34 @@ class MainWindow:
                 dialog.destroy()
             except ValueError as e:
                 print(f"Error en parámetros: {e}")
+        fg="white"
+        btry1=tk.Button(btn_frame,fg=fg,compound="center", text="Simular", command=simular_con_parametros, width= ancho_px,height=alto_px)
+        btry2=tk.Button(btn_frame,fg=fg,compound="center", text="Cancelar", command=dialog.destroy, width= ancho_px,height=alto_px)
 
-        tk.Button(btn_frame, text="Simular", command=simular_con_parametros, width=10).pack(side="left", padx=5)
-        tk.Button(btn_frame, text="Cancelar", command=dialog.destroy, width=10).pack(side="left", padx=5)
+        bgbt1=Resizer(btry1,IMG_BTx).imgcolor()
+        bgbt2=Resizer(btry2,IMG_BTy).imgcolor()
+        
+        btry1.config(activebackground=bgbt1,bg=bgbt1)
+        btry2.config(activebackground=bgbt2,bg=bgbt2)
 
+        btry1.pack(side="left", padx=5)
+        btry2.pack(side="left", padx=5)
+
+        btry1.image= IBT1
+        btry2.image= IBT2
+
+        bt_menu=tk.Menubutton(dialog,bg="blue",compound="center",text="Archivo")
+        bt_menu.pack()
+        mainmenu=tk.Menu(dialog)
+        dialog.config(menu=mainmenu)
+
+        menu=tk.Menu(bt_menu)
+        menu.config(bg="blue",activebackground="red")
+        menu.add_command(label="Nuevo",activebackground="blue")
+        #menu.add_command(label="Nuevo2",activebackground="green")
+
+        #menu.add_command(label="Nuevo3",activebackground="gray")
+        bt_menu.config(menu=menu,bg="red",activebackground="blue")
     def _ejecutar_simulacion(self, R, L, C):
         """Calcula y visualiza la función de transferencia RLC."""
         try:
@@ -470,7 +502,7 @@ class MainWindow:
             print(f"  C = {C} F")
             print(f"  ωn = {wn:.3f} rad/s")
             print(f"  ζ = {zeta:.3f}")
-            
+           #l 
             if zeta >= 1:
                 tipo_resp = "críticamente amortiguado"
             else:
@@ -665,7 +697,7 @@ class MainWindow:
                 y = self.v_load
                 print(" FFT de datos cargados desde archivo")
             else:
-                print(" Origen de datos desconocido")
+                print("❌ Origen de datos desconocido")
                 return
 
             # Preprocesamiento
