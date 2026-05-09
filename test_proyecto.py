@@ -15,8 +15,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from Procesamiento.data import DataIO
 from Procesamiento.filtro import SignalProcessor
-from Procesamiento.parametros_dinamicos import SystemIdentifier
-from Procesamiento.fdt import TransferFunctionEstimator
+from Procesamiento.parametros_dinamicos import Identificar_sistema
+from Procesamiento.fdt import Estimador_FDT
 
 def calcular_parametros_rlc(zeta, wn, C_asumido=1e-6):
     """
@@ -119,8 +119,8 @@ def probar_pipeline_completo():
 
     # 4. Identificación de parámetros
     print("\n🧮 Identificando parámetros del sistema...")
-    identifier = SystemIdentifier(t, y_norm)
-    params = identifier.estimate_second_order()
+    identifier = Identificar_sistema(t, y_norm)
+    params = identifier.verif_segundo_orden()
 
     print("📊 Parámetros estimados:")
     print(f"  ζ  = {params['zeta']:.4f}")
@@ -137,8 +137,8 @@ def probar_pipeline_completo():
 
     # 5. Función de transferencia
     print("\n📐 Generando función de transferencia...")
-    tf_est = TransferFunctionEstimator(params['zeta'], params['wn'])
-    G_est = tf_est.get_transfer_function()
+    tf_est = Estimador_FDT(params['zeta'], params['wn'])
+    G_est = tf_est.Obtener_funcion_transferencia()
 
     print("Función de transferencia estimada:")
     print(G_est)

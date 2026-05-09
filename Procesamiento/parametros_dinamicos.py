@@ -1,11 +1,11 @@
 import numpy as np
 
-class SystemIdentifier:
+class Identificar_sistema:
     def __init__(self, t, y):
         self.t = t
         self.y = y
 
-    def estimate_second_order(self):
+    def verif_segundo_orden(self):
         if len(self.y) == 0 or len(self.t) == 0:
             raise ValueError("La señal está vacía y no puede ser analizada.")
 

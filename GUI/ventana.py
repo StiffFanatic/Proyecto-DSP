@@ -14,8 +14,8 @@ from Adquisición_de_datos import muestreo
 # Módulos de procesamiento 
 from Procesamiento.data import DataIO
 from Procesamiento.filtro import SignalProcessor
-from Procesamiento.parametros_dinamicos import SystemIdentifier
-from Procesamiento.fdt import TransferFunctionEstimator
+from Procesamiento.parametros_dinamicos import Identificar_sistema
+from Procesamiento.fdt import Estimador_FDT
 from Procesamiento.fft import FFTAnalyzer
 
 
@@ -34,9 +34,6 @@ class MainWindow:
         self.root.title("Proyecto DSP - Análisis de un sistema subamortiguado")
         self.root.geometry("1100x600")
 
-        print("ICON_PATH =", ICON_PATH)
-        print("EXISTE =", os.path.exists(ICON_PATH))
-
         try:
             self.root.iconbitmap(ICON_PATH)
         except Exception as e:
@@ -46,22 +43,21 @@ class MainWindow:
         self.fs = 1000  
         self.v_raw = None
         self.G_est = None
-        self.params = None
-        self.rlc_params = None
+        self.parametros = None
+        self.parametros_rlc = None
         self.data_origen = None
         
-
         # ---------- OBJETOS ----------
         self.sampler = muestreo.RLCSampler()
         self.data_io = DataIO()
         self.processor = SignalProcessor(self.fs)
         self.fft_analyzer = FFTAnalyzer(self.fs)
-        self._create_layout()
-        self._create_plot()
+        self.Creacion_diseño_interfaz()
+        self.Creacion_grafica()
         self.mostrar_funcion_canonica()
 
     # ---------- LAYOUT ----------
-    def _create_layout(self):
+    def Creacion_diseño_interfaz(self):
         self.frame_left = tk.Frame(self.root, bg="#ecf0f1")
         self.frame_left.pack(side="left", fill="both", expand=True)
 
@@ -111,7 +107,7 @@ class MainWindow:
             print("Error cargando icono GUI:", e)
 
     # ---------- GRÁFICA ----------
-    def _create_plot(self):
+    def Creacion_grafica(self):
         self.fig = Figure(figsize=(5, 4), dpi=100)
         self.ax = self.fig.add_subplot(111)
         self.ax.set_title("Respuesta del sistema")
@@ -123,10 +119,10 @@ class MainWindow:
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
-        self._create_params_display()
+        self.Display_parametros()
 
     # ---------- PARÁMETROS DISPLAY ----------
-    def _create_params_display(self):
+    def Display_parametros(self):
         """Crea los labels para mostrar los parámetros del sistema."""
         # Título
         tk.Label(
@@ -181,7 +177,7 @@ class MainWindow:
         self.c_label = tk.Label(rlc_frame, text="C = -- μF", font=("Consolas", 10), bg="#ecf0f1")
         self.c_label.pack(anchor="w", padx=10)
 
-    def plot_signal(self, y):
+    def Mostrar_grafica(self, y):
         self.ax.clear()
         t = np.linspace(0, len(y) / self.fs, len(y))
         self.ax.plot(t, y)
@@ -216,7 +212,8 @@ class MainWindow:
                     self.limpiar_parametros()
 
                     # Visualiza datos raw en la gráfica
-                    self.plot_signal(self.v_raw)
+                    self.Mostrar_grafica(self.v_raw)
+
                     # Indicar que los datos actuales provienen de la captura serial para que la FFT sepa qué analizar
                     self.data_origen = "serial"
                 
@@ -252,7 +249,7 @@ class MainWindow:
                     self.limpiar_parametros()
                     
                     # Visualizar datos en la gráfica
-                    self.plot_signal(self.v_raw)
+                    self.Mostrar_grafica(self.v_raw)
 
                     self.v_load = self.v_raw
                     self.data_origen = "archivo"
@@ -298,23 +295,23 @@ class MainWindow:
 
     def actualizar_display_parametros(self):
         """Actualiza los labels de parámetros en la GUI."""
-        if self.params is not None:
+        if self.parametros is not None:
             # Actualizar parámetros dinámicos
-            self.zeta_label.config(text=f"ζ = {self.params['zeta']:.4f}")
-            self.wn_label.config(text=f"ωn = {self.params['wn']:.2f} rad/s")
-            self.mp_label.config(text=f"Mp = {self.params['Mp']:.3f}")
-            self.tp_label.config(text=f"tp = {self.params['t_peak']:.4f} s")
+            self.zeta_label.config(text=f"ζ = {self.parametros['zeta']:.4f}")
+            self.wn_label.config(text=f"ωn = {self.parametros['wn']:.2f} rad/s")
+            self.mp_label.config(text=f"Mp = {self.parametros['Mp']:.3f}")
+            self.tp_label.config(text=f"tp = {self.parametros['t_peak']:.4f} s")
 
-        if self.rlc_params is not None:
+        if self.parametros_rlc is not None:
             # Actualizar parámetros RLC
-            self.r_label.config(text=f"R = {self.rlc_params['R']:.1f} Ω")
-            self.l_label.config(text=f"L = {self.rlc_params['L']*1000:.1f} mH")
-            self.c_label.config(text=f"C = {self.rlc_params['C']*1e6:.0f} μF")
+            self.r_label.config(text=f"R = {self.parametros_rlc['R']:.1f} Ω")
+            self.l_label.config(text=f"L = {self.parametros_rlc['L']*1000:.1f} mH")
+            self.c_label.config(text=f"C = {self.parametros_rlc['C']*1e6:.0f} μF")
 
     def limpiar_parametros(self):
         """Limpia los parámetros mostrados en la GUI."""
-        self.params = None
-        self.rlc_params = None
+        self.parametros = None
+        self.parametros_rlc = None
         
         # Reset labels
         self.zeta_label.config(text="ζ = --")
@@ -340,42 +337,41 @@ class MainWindow:
             print(" Filtrado exitoso (Butterworth lowpass, fc=100Hz)")
 
             # Identificación del sistema
-            identifier = SystemIdentifier(t, y_norm)
-            self.params = identifier.estimate_second_order()
+            Iden_sis = Identificar_sistema(t, y_norm)
+            self.parametros = Iden_sis.verif_segundo_orden()
 
             print("Parámetros estimados:")
-            print(f"  ζ  = {self.params['zeta']:.3f}")
-            print(f"  ωn = {self.params['wn']:.3f} rad/s")
-            print(f"  Mp = {self.params['Mp']:.3f}")
-            print(f"  tp = {self.params['t_peak']:.3f}s")
+            print(f"  ζ  = {self.parametros['zeta']:.3f}")
+            print(f"  ωn = {self.parametros['wn']:.3f} rad/s")
+            print(f"  Mp = {self.parametros['Mp']:.3f}")
+            print(f"  tp = {self.parametros['t_peak']:.3f}s")
 
             # Calcular parámetros RLC
-            rlc_params = self.calcular_parametros_rlc(
-                self.params['zeta'], 
-                self.params['wn']
+            self.parametros_rlc = self.calcular_parametros_rlc(
+                self.parametros['zeta'], 
+                self.parametros['wn']
             )
-            self.rlc_params = rlc_params
             
             print(" Parámetros RLC calculados (C asumido = 1μF):")
-            print(f"  R = {rlc_params['R']:.1f} Ω")
-            print(f"  L = {rlc_params['L']*1000:.1f} mH")
-            print(f"  C = {rlc_params['C']*1e6:.0f} μF")
+            print(f"  R = {self.parametros_rlc['R']:.1f} Ω")
+            print(f"  L = {self.parametros_rlc['L']/1000:.1f} mH")
+            print(f"  C = {self.parametros_rlc['C']*1e6:.0f} μF")
 
             # Función de transferencia
-            tf_est = TransferFunctionEstimator(
-                self.params["zeta"],
-                self.params["wn"]
+            fdt_est = Estimador_FDT(
+                self.parametros["zeta"],
+                self.parametros["wn"]
             )
-            self.G_est = tf_est.get_transfer_function()
+            self.G_est = fdt_est.Obtener_funcion_transferencia()
 
             print("Función de transferencia estimada:")
             print(self.G_est)
             
             # Mostrar función de transferencia estimada en la ventana
-            self._mostrar_funcion_transferencia_estimada(self.params["wn"], self.params["zeta"])
+            self._mostrar_funcion_transferencia_estimada(self.parametros["wn"], self.parametros["zeta"])
             
             # Visualizar la señal filtrada y normalizada
-            self.plot_signal(y_norm)
+            self.Mostrar_grafica(y_norm)
 
             # Actualizar display de parámetros
             self.actualizar_display_parametros()
@@ -387,9 +383,9 @@ class MainWindow:
 
     def simular(self):
         """Abre diálogo para ingresar R, L, C o usa estimación previa."""
-        self._open_rlc_dialog()
+        self.Abrir_dialogo_rlc()
 
-    def _open_rlc_dialog(self):
+    def Abrir_dialogo_rlc(self):
         """Crea un diálogo para ingresar R, L, C."""
         dialog = tk.Toplevel(self.root)
         dialog.title("Parámetros RLC")
@@ -447,6 +443,7 @@ class MainWindow:
         IMG_BTy= Image.open(IMG_BT2).resize((ancho_px, alto_px))
         IBT2=ImageTk.PhotoImage(IMG_BTy)
         #btn_frame.columnconfigure(0, weight=1)
+        
         def simular_con_parametros():
             try:
                 R = float(entry_r.get())
@@ -460,6 +457,7 @@ class MainWindow:
                 dialog.destroy()
             except ValueError as e:
                 print(f"Error en parámetros: {e}")
+                
         fg="white"
         btry1=tk.Button(btn_frame,fg=fg,compound="center", text="Simular", command=simular_con_parametros, width= ancho_px,height=alto_px)
         btry2=tk.Button(btn_frame,fg=fg,compound="center", text="Cancelar", command=dialog.destroy, width= ancho_px,height=alto_px)
@@ -488,11 +486,11 @@ class MainWindow:
 
         #menu.add_command(label="Nuevo3",activebackground="gray")
         bt_menu.config(menu=menu,bg="red",activebackground="blue")
+
     def _ejecutar_simulacion(self, R, L, C):
         """Calcula y visualiza la función de transferencia RLC."""
         try:
-            # Parámetros del sistema RLC
-            # Para un circuito RLC serie: ωn = 1/√(LC), ζ = R/(2√(L/C))
+
             wn = 1 / np.sqrt(L * C)
             zeta = R / (2 * np.sqrt(L / C))
             
@@ -502,7 +500,7 @@ class MainWindow:
             print(f"  C = {C} F")
             print(f"  ωn = {wn:.3f} rad/s")
             print(f"  ζ = {zeta:.3f}")
-           #l 
+           
             if zeta >= 1:
                 tipo_resp = "críticamente amortiguado"
             else:
@@ -511,13 +509,14 @@ class MainWindow:
             
             # Crear función de transferencia teórica
             # G(s) = ωn² / (s² + 2ζωnS + ωn²)
-            tf_teorica = TransferFunctionEstimator(zeta, wn).get_transfer_function()
+            tf_teorica = Estimador_FDT(zeta, wn).Obtener_funcion_transferencia()
             
             print(f"\nFunción de transferencia teórica:")
             print(tf_teorica)
             
             # Simular respuesta al escalón - Enfocarse en la respuesta transitoria
             # Usar tiempo más corto para ver mejor las oscilaciones
+
             t_sim = np.linspace(0, 0.5, 5000)
             t_resp, y_resp = ctrl.step_response(tf_teorica, t_sim)
             
@@ -551,13 +550,13 @@ class MainWindow:
                 print(f"  Sobreoscilación: {Mp:.2f}%")
             
             # Actualizar los parámetros de la GUI con la simulación
-            self.params = {
+            self.parametros = {
                 "zeta": zeta,
                 "wn": wn,
                 "Mp": Mp,
                 "t_peak": t_peak
             }
-            self.rlc_params = {
+            self.parametros_rlc = {
                 "R": R,
                 "L": L,
                 "C": C
@@ -716,8 +715,8 @@ class MainWindow:
             m_peak   = mag[idx_peak]
 
             print(f"  pico detectado: {f_peak:.2f} Hz  mag={m_peak:.4f}")
-            if self.params is not None:
-                print(f"  fn estimada   : {self.params['wn']/(2*np.pi):.2f} Hz")
+            if self.parametros is not None:
+                print(f"  fn estimada   : {self.parametros['wn']/(2*np.pi):.2f} Hz")
 
             # Rango del eje X: 5× el pico, mínimo 20 Hz
             x_max = min(max(f_peak * 5, 20), self.fs / 2)
