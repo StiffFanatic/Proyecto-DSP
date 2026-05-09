@@ -59,6 +59,7 @@ class RLCSampler:
         """
         self._validar_conexion()
         self.datos_raw = []
+        self.ser.write(b"INICIAR\n")
 
         comando = f"INICIAR {int(duracion*1000)} {int(pre_delay*1000)} {int(post_delay*1000)}\n"
         self.ser.write(comando.encode())
