@@ -103,7 +103,7 @@ def probar_pipeline_completo():
     # 2. Cargar datos
     print("\n📂 Cargando datos...")
     data_io = DataIO()
-    t, y = data_io.load(test_file)
+    t, y = data_io.cargar_datos(test_file)
 
     print(f"✅ Datos cargados: {len(t)} muestras")
     print(f"   Primeros 5 tiempos: {t[:5]}")
@@ -112,8 +112,8 @@ def probar_pipeline_completo():
     # 3. Procesamiento de señal
     print("\n🔧 Procesando señal...")
     processor = SignalProcessor(fs=1000)
-    y_filt = processor.lowpass(y, fc=100)
-    y_norm = processor.normalize(y_filt)
+    y_filt = processor.pasa_bajas(y, fc=100)
+    y_norm = processor.normalizacion(y_filt)
 
     print("✅ Procesamiento completado (filtro Butterworth + normalización)")
 

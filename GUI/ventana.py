@@ -205,7 +205,7 @@ class MainWindow:
                     print(f"Captura de escalón: {len(self.v_raw)} muestras")
 
                     t = np.linspace(0, len(self.v_raw) / self.fs, len(self.v_raw))
-                    path = self.data_io.save(t, self.v_raw)
+                    path = self.data_io.guardar_datos(t, self.v_raw)
                     print(f"Datos guardados en: {path}")
 
                     # Limpiar parámetros anteriores al capturar nueva señal
@@ -238,7 +238,7 @@ class MainWindow:
                     path_completo = os.path.join(data_folder, archivo_prueba)
                     
                     # Cargar datos
-                    t, v = self.data_io.load(path_completo)
+                    t, v = self.data_io.cargar_datos(path_completo)
                     self.v_raw = v
                     
                     print(f"   Datos de prueba cargados: {len(self.v_raw)} muestras desde {archivo_prueba}")
@@ -331,8 +331,8 @@ class MainWindow:
 
         try:
             # Preprocesamiento: Filtro Butterworth + Normalización
-            y_filt = self.processor.lowpass(self.v_raw, fc=100)
-            y_norm = self.processor.normalize(y_filt)
+            y_filt = self.processor.pasa_bajas(self.v_raw, fc=100)
+            y_norm = self.processor.normalizacion(y_filt)
             
             print(" Filtrado exitoso (Butterworth lowpass, fc=100Hz)")
 
@@ -700,11 +700,11 @@ class MainWindow:
                 return
 
             # Preprocesamiento
-            y_filt = self.processor.lowpass(y, fc=100)
-            y_norm = self.processor.normalize(y_filt)
+            y_filt = self.processor.pasa_bajas(y, fc=100)
+            y_norm = self.processor.normalizacion(y_filt)
 
             # FFT con derivada + suavizado
-            freqs, mag, mag_smooth = self.fft_analyzer.compute_fft_escalon(y_norm)
+            freqs, mag, mag_smooth = self.fft_analyzer.fft_escalon(y_norm)
 
             # Buscar pico en espectro suavizado, ignorando DC
             umbral_dc_hz = 2.0

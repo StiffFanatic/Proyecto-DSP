@@ -7,7 +7,7 @@ class DataIO:
         self.folder = folder
         os.makedirs(self.folder, exist_ok=True)
 
-    def save(self, t, y):
+    def guardar_datos(self, t, y):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"rlc_data_{timestamp}.csv"
         path = os.path.join(self.folder, filename)
@@ -20,6 +20,6 @@ class DataIO:
 
         return path
 
-    def load(self, path):
+    def cargar_datos(self, path):
         df = pd.read_csv(path)
         return df["time_s"].values, df["voltage_v"].values

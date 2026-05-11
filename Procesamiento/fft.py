@@ -5,23 +5,7 @@ class FFTAnalyzer:
     def __init__(self, fs):
         self.fs = fs
 
-    def compute_fft(self, y, window=True):
-        y = np.asarray(y, dtype=float)
-        N = len(y)
-
-        if N == 0:
-            raise ValueError("Señal vacía")
-
-        if window:
-            y = y * np.hanning(N)
-
-        Y = np.fft.fft(y)
-        freqs = np.fft.fftfreq(N, d=1/self.fs)
-
-        idx = freqs >= 0
-        return freqs[idx], np.abs(Y[idx]) / N
-
-    def compute_fft_escalon(self, y, window=True, kernel=5):
+    def fft_escalon(self, y, window=True, kernel=5):
         """
         FFT optimizada para respuesta al escalón.
 
@@ -61,9 +45,3 @@ class FFTAnalyzer:
         mag_smooth = np.convolve(mag, np.ones(kernel) / kernel, mode='same')
 
         return freqs, mag, mag_smooth
-
-    def dominant_frequency(self, y):
-        freqs, mag, mag_smooth = self.compute_fft_escalon(y)
-        # Usar espectro suavizado e ignorar DC (bin 0)
-        idx_max = np.argmax(mag_smooth[1:]) + 1
-        return freqs[idx_max], mag[idx_max]

@@ -3,7 +3,7 @@ from PIL import Image, ImageTk
 import os
 from GUI.resize import Resizer
 
-class DSPButton:
+class Botones:
     def __init__(self, parent, text, color, command=None, img_name=None):
         
         base_dir = os.path.dirname(__file__)
@@ -52,12 +52,6 @@ class DSPButton:
         self.button.image = self.bt_img
         self.button.pack(pady=3)
      
-         
-    
-        
-        
-        #self.button.pack(fill="x", pady=3, padx=10)
-     
 class ButtonManager:
     def __init__(self, main_window):
         self.main = main_window
@@ -66,11 +60,11 @@ class ButtonManager:
         
 
     def _create_buttons(self):
-        DSPButton(self.frame, "Conectar", "#2ecc71", self.main.conectar_serial,"cian.jpg")
-        DSPButton(self.frame, "Tomar Datos", "#16a085", self.main.capturar_escalon,"azul.jpg")
-        DSPButton(self.frame, "Cargar Datos Prueba", "#27ae60", self.main.cargar_datos_prueba,"verde.jpg")
-        DSPButton(self.frame, "Borrar", "#e74c3c", self.main.borrar,"rojo.jpg")
-        DSPButton(self.frame, "Mostrar Análisis", "#e67e22", self.main.mostrar_analisis,"naranja.jpg")
-        DSPButton(self.frame, "FFT", "#f39c12", self.main.mostrar_fft,"mostaza.jpg")
-        DSPButton(self.frame, "Simular", "#9b59b6", self.main.simular,"morado.jpg")
-        DSPButton(self.frame, "Salir", "#7f8c8d", self.main.root.destroy,"gris.jpg")
+        Botones(self.frame, "Conectar", "#2ecc71", self.main.conectar_serial,"cian.jpg")
+        Botones(self.frame, "Tomar Datos", "#16a085", self.main.capturar_escalon,"azul.jpg")
+        Botones(self.frame, "Cargar Datos Prueba", "#27ae60", self.main.cargar_datos_prueba,"verde.jpg")
+        Botones(self.frame, "Borrar", "#e74c3c", self.main.borrar,"rojo.jpg")
+        Botones(self.frame, "Mostrar Análisis", "#e67e22", self.main.mostrar_analisis,"naranja.jpg")
+        Botones(self.frame, "FFT", "#f39c12", self.main.mostrar_fft,"mostaza.jpg")
+        Botones(self.frame, "Simular", "#9b59b6", self.main.simular,"morado.jpg")
+        Botones(self.frame, "Salir", "#7f8c8d", self.main.root.destroy,"gris.jpg")

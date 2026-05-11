@@ -5,11 +5,11 @@ class SignalProcessor:
     def __init__(self, fs):
         self.fs = fs
 
-    def lowpass(self, signal, fc=100):
+    def pasa_bajas(self, signal, fc=100):
         b, a = butter(4, fc / (self.fs / 2), btype='low')
         return filtfilt(b, a, signal)
 
-    def normalize(self, signal):
+    def normalizacion(self, signal):
         """Normaliza la señal dividiendo por el valor final (steady-state) para respuestas al escalón."""
         if len(signal) < 50:
             # Para señales cortas, usar el último valor
