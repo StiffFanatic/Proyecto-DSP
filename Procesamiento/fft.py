@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class FFTAnalyzer:
+class FFT_analizador:
     def __init__(self, fs):
         self.fs = fs
 

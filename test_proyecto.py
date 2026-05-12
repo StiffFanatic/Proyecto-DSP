@@ -14,7 +14,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from Procesamiento.data import DataIO
-from Procesamiento.filtro import SignalProcessor
+from Procesamiento.filtro import Procesamiento_señal
 from Procesamiento.parametros_dinamicos import Identificar_sistema
 from Procesamiento.fdt import Estimador_FDT
 
@@ -111,7 +111,7 @@ def probar_pipeline_completo():
 
     # 3. Procesamiento de señal
     print("\n🔧 Procesando señal...")
-    processor = SignalProcessor(fs=1000)
+    processor = Procesamiento_señal(fs=1000)
     y_filt = processor.pasa_bajas(y, fc=100)
     y_norm = processor.normalizacion(y_filt)
 

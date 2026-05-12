@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import butter, filtfilt
 
-class SignalProcessor:
+class Procesamiento_señal:
     def __init__(self, fs):
         self.fs = fs
 

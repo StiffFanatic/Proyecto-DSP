@@ -13,10 +13,10 @@ from Adquisición_de_datos import muestreo
 
 # Módulos de procesamiento 
 from Procesamiento.data import DataIO
-from Procesamiento.filtro import SignalProcessor
+from Procesamiento.filtro import Procesamiento_señal
 from Procesamiento.parametros_dinamicos import Identificar_sistema
 from Procesamiento.fdt import Estimador_FDT
-from Procesamiento.fft import FFTAnalyzer
+from Procesamiento.fft import FFT_analizador
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -46,17 +46,20 @@ class MainWindow:
         self.parametros = None
         self.parametros_rlc = None
         self.data_origen = None
+        self.parametros_asumidos = tk.StringVar(value="C") # R o L asumido para cálculo de parámetros RLC
+        self.rlc_inputs = {}
         
         # ---------- OBJETOS ----------
         self.sampler = muestreo.RLCSampler()
         self.data_io = DataIO()
-        self.processor = SignalProcessor(self.fs)
-        self.fft_analyzer = FFTAnalyzer(self.fs)
+        self.processor = Procesamiento_señal(self.fs)
+        self.fft = FFT_analizador(self.fs)
         self.Creacion_diseño_interfaz()
         self.Creacion_grafica()
         self.mostrar_funcion_canonica()
+        
 
-    # ---------- LAYOUT ----------
+    # ---------- CREACIÓN DE LA INTERFAZ ----------
     def Creacion_diseño_interfaz(self):
         self.frame_left = tk.Frame(self.root, bg="#ecf0f1")
         self.frame_left.pack(side="left", fill="both", expand=True)
@@ -66,7 +69,7 @@ class MainWindow:
 
         tk.Label(
             self.frame_left,
-            text="Sistema Subamortiguado",
+            text="Sistema RLC - Respuesta al Escalón",
             font=("Segoe UI", 16, "bold"),
             bg="#ecf0f1"
         ).pack(pady=10)
@@ -82,11 +85,11 @@ class MainWindow:
             text="Controles",
             font=("Segoe UI", 14, "bold"),
             bg="#bdc3c7"
-        ).pack(pady=10)
+        ).pack(pady=5)
 
         # Frame para parámetros en el panel derecho
         self.params_frame = tk.Frame(self.frame_right, bg="#ecf0f1")
-        self.params_frame.pack(fill="x", padx=10, pady=10)
+        self.params_frame.pack(fill="x", padx=10, pady=5)
 
         # ---------- ICONO SUPERIOR DERECHO ----------
         try:
@@ -156,13 +159,41 @@ class MainWindow:
         self.tp_label = tk.Label(dyn_frame, text="tp = -- s", font=("Consolas", 10), bg="#ecf0f1")
         self.tp_label.pack(anchor="w", padx=10)
 
+        # -------- RLC editable --------
+        def crear_input(nombre, unidad, fila):
+
+    
+            frame = tk.Frame(rlc_frame, bg="#ecf0f1")
+            frame.pack(anchor="w", padx=10, pady=2)
+
+            tk.Radiobutton(
+                frame,
+                text=f"Asumir {nombre}",
+                variable=self.parametros_asumidos,
+                value=nombre,
+                bg="#ecf0f1",
+                command=self.actualizar_inputs_rlc
+            ).pack(side="left")
+            
+            var = tk.DoubleVar(value=1.0)
+
+            entry = tk.Entry(frame, width=7, textvariable=var, font=("Consolas", 9))
+            entry.pack(side="left", padx=5)
+
+            tk.Label(frame, text=unidad, bg="#ecf0f1").pack(side="left")
+            
+            self.rlc_inputs[nombre] = {
+                "var": var,
+                "entry": entry
+            }
+
         # Frame para parámetros RLC
         rlc_frame = tk.Frame(self.params_frame, bg="#ecf0f1")
         rlc_frame.pack(fill="x")
 
         tk.Label(
             rlc_frame,
-            text="RLC (C=1μF):",
+            text="RLC:",
             font=("Segoe UI", 10, "bold"),
             bg="#ecf0f1"
         ).pack(anchor="w")
@@ -177,6 +208,20 @@ class MainWindow:
         self.c_label = tk.Label(rlc_frame, text="C = -- μF", font=("Consolas", 10), bg="#ecf0f1")
         self.c_label.pack(anchor="w", padx=10)
 
+        crear_input("R", "Ω", 0)
+        crear_input("L", "H", 1)
+        crear_input("C", "μF", 2)
+
+        self.actualizar_inputs_rlc()
+
+    def actualizar_inputs_rlc(self):
+
+        for nombre, data in self.rlc_inputs.items():
+            if nombre == self.parametros_asumidos.get():
+                data["entry"].config(state="normal")
+            else:
+                data["entry"].config(state="disabled")
+            
     def Mostrar_grafica(self, y):
         self.ax.clear()
         t = np.linspace(0, len(y) / self.fs, len(y))
@@ -265,33 +310,38 @@ class MainWindow:
     def calcular_parametros_rlc(self, zeta, wn, C_asumido=1e-6):
         """
         Calcula R, L, C a partir de parámetros dinámicos.
-        Asume un valor típico para C y calcula L y R.
+        Asume un valor típico para un parametro y calcula los otros dos.
         
-        Args:
-            zeta: Factor de amortiguamiento
-            wn: Frecuencia natural (rad/s)
-            C_asumido: Capacitancia asumida (F), default 1μF
-            
-        Returns:
-            dict: {'R': resistencia, 'L': inductancia, 'C': capacitancia}
         """
-        # Para circuito RLC serie:
-        # ωn = 1/√(LC)  ⇒  LC = 1/ωn²
-        # ζ = R/(2√(L/C))  ⇒  R = 2ζ√(L/C)
-        
-        # Calcular L a partir de LC = 1/ωn² y C asumido
-        LC = 1 / (wn ** 2)
-        L = LC / C_asumido
-        
-        # Calcular R a partir de ζ = R/(2√(L/C))
-        sqrt_LC = np.sqrt(L / C_asumido)
-        R = 2 * zeta * sqrt_LC
-        
+        modo = self.parametros_asumidos.get()
+
+        R = self.rlc_inputs["R"]["var"].get()
+        L = self.rlc_inputs["L"]["var"].get()
+        C = self.rlc_inputs["C"]["var"].get() * 1e-6 
+
+        if modo == "C":
+            L = 1 / (wn**2 * C)
+            R = 2 * zeta * np.sqrt(L / C)
+
+        elif modo == "L":
+            C = 1 / (wn**2 * L)
+            R = 2 * zeta * np.sqrt(L / C)
+
+        elif modo == "R":
+            L = (R / (2 * zeta))**2 * C
+            C = 1 / (wn**2 * L)
+
         return {
-            'R': R,
-            'L': L,
-            'C': C_asumido
-        }
+                "R": R, 
+                "L": L, 
+                "C": C
+                }
+    
+    def actualizar_campos_rlc(self):
+        self.rlc_inputs["R"]["var"].set(self.parametros_rlc["R"])
+        self.rlc_inputs["L"]["var"].set(self.parametros_rlc["L"])
+        self.rlc_inputs["C"]["var"].set(self.parametros_rlc["C"] * 1e6)
+    
 
     def actualizar_display_parametros(self):
         """Actualiza los labels de parámetros en la GUI."""
@@ -414,7 +464,7 @@ class MainWindow:
         # Resistencia (Ω)
         tk.Label(frame, text="R (Ω):",bg=bg,fg=fg, font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w", pady=5)
         entry_r = tk.Entry(frame,bg=bg,fg=fg, width=15)
-        entry_r.insert(0, "50")
+        entry_r.insert(0, "10")
         entry_r.grid(row=0, column=1, pady=5)
 
         # Inductancia (H)
@@ -426,7 +476,7 @@ class MainWindow:
         # Capacitancia (F)
         tk.Label(frame, text="C (F):",bg=bg,fg=fg, font=("Segoe UI", 10)).grid(row=2, column=0, sticky="w", pady=5)
         entry_c = tk.Entry(frame,bg=bg,fg=fg,width=15)
-        entry_c.insert(0, "10e-6")
+        entry_c.insert(0, "100e-6")
         entry_c.grid(row=2, column=1, pady=5)
 
         # Botones
@@ -704,7 +754,7 @@ class MainWindow:
             y_norm = self.processor.normalizacion(y_filt)
 
             # FFT con derivada + suavizado
-            freqs, mag, mag_smooth = self.fft_analyzer.fft_escalon(y_norm)
+            freqs, mag, mag_smooth = self.fft.fft_escalon(y_norm)
 
             # Buscar pico en espectro suavizado, ignorando DC
             umbral_dc_hz = 2.0

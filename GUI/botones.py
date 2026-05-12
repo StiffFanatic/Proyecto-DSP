@@ -13,7 +13,7 @@ class Botones:
         # 1. Definimos el tamaño deseado en PÍXELES
        
         ancho_px = ancho*10
-        alto_px = alto*10
+        alto_px = alto*9
        
         if img_name:
             # Si hay imagen, la cargamos y redimensionamos
