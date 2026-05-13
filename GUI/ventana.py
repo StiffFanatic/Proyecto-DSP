@@ -7,6 +7,10 @@ import control as ctrl
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from PIL import Image, ImageTk
+
+from GUI.ventana_completa import No_molestar
+from GUI.menu_desplegable import Menu_desplegable
+
 from GUI.resize import Resizer
 
 from Adquisición_de_datos import muestreo
@@ -29,11 +33,10 @@ IMG_BT2= os.path.join(BASE_DIR, "assets", "Imagenes", "rojo.jpg")
 #bt linea 420
 class MainWindow:
     def __init__(self):
-
         self.root = tk.Tk()
         self.root.title("Proyecto DSP - Análisis de un sistema subamortiguado")
         self.root.geometry("1100x600")
-
+        No_molestar(self.root)
         try:
             self.root.iconbitmap(ICON_PATH)
         except Exception as e:
@@ -433,12 +436,16 @@ class MainWindow:
 
     def simular(self):
         """Abre diálogo para ingresar R, L, C o usa estimación previa."""
+        
+   
         self.Abrir_dialogo_rlc()
-
+       
     def Abrir_dialogo_rlc(self):
         """Crea un diálogo para ingresar R, L, C."""
+        #self.root.sim= not self.root.sim 
         dialog = tk.Toplevel(self.root)
         dialog.title("Parámetros RLC")
+        dialog.grab_set()
         #dialog.geometry("300x250")
         dialog.resizable(False, False)
 
@@ -452,15 +459,16 @@ class MainWindow:
         alto_px = alto*10
         IMG_ET= Image.open(IMG_ENT)#.resize((ancho_px, alto_px))
         IET1=ImageTk.PhotoImage(  IMG_ET)
-        frame= tk.Label(dialog, padx=10, pady=10)
+        plantilla=tk.Label(dialog)
+        plantilla.pack(expand=True)
+        frame= tk.Label(plantilla, padx=10, pady=10)
         
 
         #fg=Resizer(None,IMG_ET).imgcolor()
         fg="darkblue"
         bg="white"
         frame.config(bg=bg)
-        frame.pack(fill="both", expand=True)
-        
+        frame.grid(row=0,column=0,sticky="nw")
         # Resistencia (Ω)
         tk.Label(frame, text="R (Ω):",bg=bg,fg=fg, font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w", pady=5)
         entry_r = tk.Entry(frame,bg=bg,fg=fg, width=15)
@@ -492,8 +500,7 @@ class MainWindow:
         IBT1=ImageTk.PhotoImage(IMG_BTx)
         IMG_BTy= Image.open(IMG_BT2).resize((ancho_px, alto_px))
         IBT2=ImageTk.PhotoImage(IMG_BTy)
-        #btn_frame.columnconfigure(0, weight=1)
-        
+       
         def simular_con_parametros():
             try:
                 R = float(entry_r.get())
@@ -514,7 +521,7 @@ class MainWindow:
 
         bgbt1=Resizer(btry1,IMG_BTx).imgcolor()
         bgbt2=Resizer(btry2,IMG_BTy).imgcolor()
-        
+        self.menu_app = Menu_desplegable(plantilla)
         btry1.config(activebackground=bgbt1,bg=bgbt1)
         btry2.config(activebackground=bgbt2,bg=bgbt2)
 
@@ -524,19 +531,7 @@ class MainWindow:
         btry1.image= IBT1
         btry2.image= IBT2
 
-        bt_menu=tk.Menubutton(dialog,bg="blue",compound="center",text="Archivo")
-        bt_menu.pack()
-        mainmenu=tk.Menu(dialog)
-        dialog.config(menu=mainmenu)
-
-        menu=tk.Menu(bt_menu)
-        menu.config(bg="blue",activebackground="red")
-        menu.add_command(label="Nuevo",activebackground="blue")
-        #menu.add_command(label="Nuevo2",activebackground="green")
-
-        #menu.add_command(label="Nuevo3",activebackground="gray")
-        bt_menu.config(menu=menu,bg="red",activebackground="blue")
-
+       
     def _ejecutar_simulacion(self, R, L, C):
         """Calcula y visualiza la función de transferencia RLC."""
         try:
