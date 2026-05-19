@@ -1,5 +1,6 @@
 import tkinter as tk
 import threading
+from tkinter import dialog
 import numpy as np
 import os
 import control as ctrl
@@ -60,8 +61,6 @@ class MainWindow:
         self.Creacion_diseño_interfaz()
         self.Creacion_grafica()
         self.mostrar_funcion_canonica()
-        
-
     # ---------- CREACIÓN DE LA INTERFAZ ----------
     def Creacion_diseño_interfaz(self):
         self.frame_left = tk.Frame(self.root, bg="#ecf0f1")
@@ -111,7 +110,6 @@ class MainWindow:
 
         except Exception as e:
             print("Error cargando icono GUI:", e)
-
     # ---------- GRÁFICA ----------
     def Creacion_grafica(self):
         self.fig = Figure(figsize=(5, 4), dpi=100)
@@ -126,7 +124,6 @@ class MainWindow:
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
         self.Display_parametros()
-
     # ---------- PARÁMETROS DISPLAY ----------
     def Display_parametros(self):
         """Crea los labels para mostrar los parámetros del sistema."""
@@ -234,7 +231,6 @@ class MainWindow:
         self.ax.set_ylabel("Amplitud")
         self.ax.grid(True)
         self.canvas.draw()
-
     # ---------- FUNCIONES ----------
     def conectar_serial(self):
         try:
@@ -310,7 +306,7 @@ class MainWindow:
         except Exception as e:
             print(f"Error cargando datos de prueba: {e}")
 
-    def calcular_parametros_rlc(self, zeta, wn, C_asumido=1e-6):
+    def calcular_parametros_rlc(self, zeta, wn):
         """
         Calcula R, L, C a partir de parámetros dinámicos.
         Asume un valor típico para un parametro y calcula los otros dos.
@@ -344,7 +340,6 @@ class MainWindow:
         self.rlc_inputs["R"]["var"].set(self.parametros_rlc["R"])
         self.rlc_inputs["L"]["var"].set(self.parametros_rlc["L"])
         self.rlc_inputs["C"]["var"].set(self.parametros_rlc["C"] * 1e6)
-    
 
     def actualizar_display_parametros(self):
         """Actualiza los labels de parámetros en la GUI."""
@@ -436,8 +431,6 @@ class MainWindow:
 
     def simular(self):
         """Abre diálogo para ingresar R, L, C o usa estimación previa."""
-        
-   
         self.Abrir_dialogo_rlc()
        
     def Abrir_dialogo_rlc(self):
@@ -448,6 +441,9 @@ class MainWindow:
         dialog.grab_set()
         #dialog.geometry("300x250")
         dialog.resizable(False, False)
+        dialog.grid_columnconfigure(0, weight=0)
+        dialog.grid_columnconfigure(1, weight=1)
+       
 
         # Frame para inputs
         bg="darkblue"
@@ -459,10 +455,9 @@ class MainWindow:
         alto_px = alto*10
         IMG_ET= Image.open(IMG_ENT)#.resize((ancho_px, alto_px))
         IET1=ImageTk.PhotoImage(  IMG_ET)
-        plantilla=tk.Label(dialog)
-        plantilla.pack(expand=True)
+        plantilla = tk.Label(dialog)
+        plantilla.grid(row=0, column=0, sticky="nw")
         frame= tk.Label(plantilla, padx=10, pady=10)
-        
 
         #fg=Resizer(None,IMG_ET).imgcolor()
         fg="darkblue"
@@ -521,7 +516,13 @@ class MainWindow:
 
         bgbt1=Resizer(btry1,IMG_BTx).imgcolor()
         bgbt2=Resizer(btry2,IMG_BTy).imgcolor()
-        self.menu_app = Menu_desplegable(plantilla)
+
+        self.menu_app = Menu_desplegable(
+                plantilla,
+                entry_r,
+                entry_l,
+                entry_c
+            )
         btry1.config(activebackground=bgbt1,bg=bgbt1)
         btry2.config(activebackground=bgbt2,bg=bgbt2)
 
@@ -531,7 +532,6 @@ class MainWindow:
         btry1.image= IBT1
         btry2.image= IBT2
 
-       
     def _ejecutar_simulacion(self, R, L, C):
         """Calcula y visualiza la función de transferencia RLC."""
         try:
@@ -546,11 +546,13 @@ class MainWindow:
             print(f"  ωn = {wn:.3f} rad/s")
             print(f"  ζ = {zeta:.3f}")
            
-            if zeta >= 1:
-                tipo_resp = "críticamente amortiguado"
+            if zeta < 1:
+                tipo_resp = "Subamortiguado"
+            elif zeta == 1:
+                tipo_resp = "Criticamente amortiguado"
             else:
-                tipo_resp = "subamortiguado"
-            print(f"  Tipo: {tipo_resp}")
+                tipo_resp = "Sobreamortiguado"
+                print(f"  Tipo: {tipo_resp}")
             
             # Crear función de transferencia teórica
             # G(s) = ωn² / (s² + 2ζωnS + ωn²)
@@ -610,7 +612,7 @@ class MainWindow:
             
             # Formatting
             # self.ax.set_title(f"Sistema RLC: R={R}Ω | L={L}H | C={C}F | ζ={zeta:.4f} ({tipo_resp})"
-            self.ax.set_title(f"Sistema RLC : ({tipo_resp})", 
+            self.ax.set_title(f"Sistema RLC : {tipo_resp}", 
                             fontsize=11, fontweight='bold', pad=10)
             self.ax.set_xlabel("Tiempo (s)", fontsize=10)
             self.ax.set_ylabel("Amplitud (V)", fontsize=10)

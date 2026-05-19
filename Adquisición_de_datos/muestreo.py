@@ -28,29 +28,6 @@ class RLCSampler:
         if self.ser is None or not self.ser.is_open:
             raise RuntimeError("Puerto serial no conectado")
 
-   
-    def capturar(self, n_filtro=20):
-        self._validar_conexion()
-        self.datos_raw = []
-
-        self.ser.write(b"INICIAR\n")
-
-        while True:
-            linea = self.ser.readline().decode(errors="ignore").strip()
-            if linea == "FIN":
-                break
-            if linea.isdigit():
-                self.datos_raw.append(int(linea))
-
-        if not self.datos_raw:
-            raise RuntimeError("No se recibieron datos")
-
-        v_data = np.array(self.datos_raw) * (3.3 / 4095.0)
-        v_filtrado = self.filtro_media_movil(v_data, n_filtro)
-        t = np.linspace(0, 0.1, len(v_data))
-
-        return t, v_data, v_filtrado
-
     def capturar_paso(self, duracion=0.05, pre_delay=0.1, post_delay=0.2):
         print("🟢 capturar_paso EJECUTÁNDOSE")
         """
