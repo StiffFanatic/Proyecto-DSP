@@ -26,7 +26,6 @@ from Procesamiento.fft import FFT_analizador
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ICON_PATH = os.path.join(BASE_DIR, "assets", "Imagenes", "usc.ico")
-ICON_IMG_PATH = os.path.join(BASE_DIR, "assets", "Imagenes", "usc.ico")
 IMG_ENT= os.path.join(BASE_DIR, "assets", "Imagenes", "grisalo.jpg")
 IMG_BT1= os.path.join(BASE_DIR, "assets", "Imagenes", "azul.jpg")
 IMG_BT2= os.path.join(BASE_DIR, "assets", "Imagenes", "rojo.jpg")
@@ -95,7 +94,7 @@ class MainWindow:
 
         # ---------- ICONO SUPERIOR DERECHO ----------
         try:
-            img = Image.open(ICON_IMG_PATH)
+            img = Image.open(ICON_PATH)
             img = img.resize((70, 70), Image.LANCZOS)  # tamaño del icono
             self.icon_img = ImageTk.PhotoImage(img)
 
@@ -516,13 +515,40 @@ class MainWindow:
 
         bgbt1=Resizer(btry1,IMG_BTx).imgcolor()
         bgbt2=Resizer(btry2,IMG_BTy).imgcolor()
+        
+# 1. Creas el contenedor del menú primero
+        label = tk.Frame(plantilla, bg="darkred", width=360, height=100)
+        label.grid_propagate(False)
+        label.grid(row=0, column=1)
+        label.lift()
 
+        # 2. INSTANCIAS EL MENÚ 
         self.menu_app = Menu_desplegable(
-                plantilla,
-                entry_r,
-                entry_l,
-                entry_c
-            )
+            label,
+            entry_r,
+            entry_l,
+            entry_c
+        )
+        a = 2.25
+        #Dimensionado basado en el menú
+        wdht = int(a * self.menu_app.wdth) 
+        ht = int(80 * a)
+        label.config(width=wdht, height=ht, relief="solid")
+
+        ancho=60
+        alto=32
+        ancho_px = ancho*10
+        alto_px = alto*9
+
+        pil_img = Image.open(ICON_PATH).resize((ancho_px, alto_px))
+        men_img = ImageTk.PhotoImage(pil_img)
+
+        #Espacio que ocupa la imagen
+        fondo_img = tk.Label(label, bg="blue", image=men_img)
+        fondo_img.image = men_img 
+        fondo_img.place(x=0, y=0, relwidth=1, relheight=1) 
+        fondo_img.lower() # Envía la imagen al fondo para que el menú esté en la cima
+
         btry1.config(activebackground=bgbt1,bg=bgbt1)
         btry2.config(activebackground=bgbt2,bg=bgbt2)
 
