@@ -222,13 +222,68 @@ class MainWindow:
                 data["entry"].config(state="disabled")
             
     def Mostrar_grafica(self, y):
+        """Grafica una señal `y` y, si es posible, muestra el tipo de respuesta (sub/crit/ sobreamortiguado).
+
+        Intenta reutilizar `self.parametros` si ya existen; en caso contrario realiza
+        una identificación rápida (filtro + normalización + Identificar_sistema)
+        para estimar `zeta` y así mostrar el tipo en el título.
+        """
         self.ax.clear()
         t = np.linspace(0, len(y) / self.fs, len(y))
-        self.ax.plot(t, y)
-        self.ax.set_title("Señal")
+
+        # Etiqueta de origen (para la leyenda)
+        origen = getattr(self, 'data_origen', None)
+        origen_label = None
+        if origen == 'serial':
+            origen_label = 'Datos muestreados'
+        elif origen == 'archivo':
+            origen_label = 'Datos de prueba'
+        elif origen == 'simulacion':
+            origen_label = 'Simulación'
+
+        if origen_label:
+            self.ax.plot(t, y, label=origen_label, alpha=0.9)
+        else:
+            self.ax.plot(t, y)
+
+        # Determinar tipo de respuesta por amortiguamiento (ζ)
+        tipo_resp = None
+        try:
+            zeta = None
+            if self.parametros is not None and 'zeta' in self.parametros:
+                zeta = self.parametros['zeta']
+            else:
+                # Hacer una estimación rápida si no hay parámetros previos
+                y_filt = self.processor.pasa_bajas(y, fc=100)
+                y_norm = self.processor.normalizacion(y_filt)
+                Iden = Identificar_sistema(t, y_norm)
+                params_tmp = Iden.verif_segundo_orden()
+                zeta = params_tmp.get('zeta')
+
+            if zeta is not None:
+                if zeta < 1:
+                    tipo_resp = 'Subamortiguado'
+                elif abs(zeta - 1.0) < 1e-3:
+                    tipo_resp = 'Criticamente amortiguado'
+                else:
+                    tipo_resp = 'Sobreamortiguado'
+        except Exception:
+            # Si la identificación falla, no interrumpir la gráfica
+            tipo_resp = None
+
+        title = 'Sistema RLC'
+        if tipo_resp:
+            title = f"{title} - {tipo_resp}"
+
+        self.ax.set_title(title)
         self.ax.set_xlabel("Tiempo (s)")
         self.ax.set_ylabel("Amplitud")
         self.ax.grid(True)
+
+        # Mostrar leyenda si hay etiqueta de origen
+        if origen_label:
+            self.ax.legend(loc='upper right', fontsize=9)
+
         self.canvas.draw()
     # ---------- FUNCIONES ----------
     def conectar_serial(self):
@@ -419,6 +474,38 @@ class MainWindow:
             
             # Visualizar la señal filtrada y normalizada
             self.Mostrar_grafica(y_norm)
+
+            # Mostrar tipo de respuesta directamente tras el análisis
+            try:
+                zeta_val = None
+                if self.parametros is not None and 'zeta' in self.parametros:
+                    zeta_val = self.parametros['zeta']
+
+                if zeta_val is not None:
+                    if zeta_val < 1:
+                        tipo_resp = 'Subamortiguado'
+                    elif abs(zeta_val - 1.0) < 1e-3:
+                        tipo_resp = 'Criticamente amortiguado'
+                    else:
+                        tipo_resp = 'Sobreamortiguado'
+
+                    # Añadir anotación en la gráfica (esquina superior izquierda)
+                    try:
+                        # usar coordenadas relativas al axes
+                        self.ax.text(
+                            0.02,
+                            0.95,
+                            f"Tipo: {tipo_resp}\nζ={zeta_val:.3f}",
+                            transform=self.ax.transAxes,
+                            fontsize=9,
+                            va='top',
+                            bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+                        )
+                        self.canvas.draw()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
 
             # Actualizar display de parámetros
             self.actualizar_display_parametros()
