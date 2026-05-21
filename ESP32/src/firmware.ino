@@ -58,14 +58,14 @@ void ejecutarCapturaRLC() {
   // Sincronización de tiempo inicial
   unsigned long tiempoInicio = micros();
   
-  // 1. ACTIVAR EXCITACIÓN (Escalón positivo)
+  //  ACTIVAR EXCITACIÓN 
   digitalWrite(EXCITACION_PIN, HIGH);
   
-  // 2. BUCLE DE CAPTURA DE ALTA VELOCIDAD
+  //  BUCLE DE CAPTURA DE ALTA VELOCIDAD
   // Captura durante el tiempo definido o hasta llenar el buffer
   while ((micros() - tiempoInicio < CAPTURA_TOTAL) && (muestrasTomadas < MAX_MUESTRAS)) {
     
-    // Si ya pasaron los 50ms, bajamos el pulso (Escalón negativo)
+    // Si ya pasaron los 50ms, bajamos el pulso
     if (!pulsoFinalizado && (micros() - tiempoInicio >= DURACION_PULSO)) {
       digitalWrite(EXCITACION_PIN, LOW);
       pulsoFinalizado = true;
@@ -79,7 +79,7 @@ void ejecutarCapturaRLC() {
   // Asegurar que el pin de excitación quede en 0
   digitalWrite(EXCITACION_PIN, LOW);
   
-  // 3. ENVÍO DE DATOS A PYTHON
+  // ENVÍO DE DATOS A PYTHON
   // Enviamos los datos línea por línea para que Python los procese
   for (int i = 0; i < muestrasTomadas; i++) {
     Serial.println(bufferDatos[i]);
