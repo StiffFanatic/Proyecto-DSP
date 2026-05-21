@@ -56,10 +56,10 @@ class Menu_desplegable:
         self.visible = False
         self.MODOS_RLC = {
 
-            "Sobre\namortiguado": (10, 0.1, 100e-6),
-            "Sub\namortiguado": (200, 0.1, 10e-6),
-            "Críticamente\namortiguado": (1000, 0.1, 10e-6),
-            
+            "Sub\namortiguado": (10, 0.1, 100e-6),
+            "Críticamente\namortiguado": (200, 0.1, 10e-6),
+            "Sobre\namortiguado": (1000, 0.1, 10e-6),
+
         }
         self._setup_ui()
         
