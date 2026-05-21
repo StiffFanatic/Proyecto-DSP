@@ -55,9 +55,11 @@ class Menu_desplegable:
         self.width = 40
         self.visible = False
         self.MODOS_RLC = {
-        "sobre\namortiguado": (10, 0.1, 100e-6),
-        "sub\namortiguado": (200, 0.1, 10e-6),
-        "críticamente\namortiguado": (1000, 0.1, 10e-6),
+
+            "Sobre\namortiguado": (10, 0.1, 100e-6),
+            "Sub\namortiguado": (200, 0.1, 10e-6),
+            "Críticamente\namortiguado": (1000, 0.1, 10e-6),
+            
         }
         self._setup_ui()
         
@@ -102,7 +104,7 @@ class Menu_desplegable:
         self._create_menu_items()
 
     def _create_menu_items(self):
-        opciones=["sobre\namortiguado","sub\namortiguado","críticamente\namortiguado"]
+        opciones=["Sobre\namortiguado","Sub\namortiguado","Críticamente\namortiguado"]
         
         self.wdth=self.width
         for i,opcion in enumerate(opciones):
