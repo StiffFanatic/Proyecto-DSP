@@ -2,15 +2,7 @@ import tkinter as tk
 #from GUI.resize import Resizer
 from PIL import Image, ImageTk
 import os
-"""
-MODOS_RLC = {
-        "Subamortiguado": (10, 0.1, 100e-6),
-        "Criticamente amortiguado": (200, 0.1, 10e-6),
-        "Sobreamortiguado": (1000, 0.1, 10e-6),
-        }
-        """
-
-        
+      
 class Menu:
     """Clase para cada opción individual del menú desplegable"""
     def __init__(self, parent, text, width,row, command=None):
