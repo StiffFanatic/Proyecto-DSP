@@ -1,10 +1,11 @@
 import serial
+import serial.tools.list_ports #librería detallada de puerto serial
 import numpy as np
 import time
 
 
 class RLCSampler:
-    def __init__(self, puerto="COM4", baudios=460800, timeout=5):
+    def __init__(self, puerto=None, baudios=460800, timeout=5):
         self.puerto = puerto
         self.baudios = baudios
         self.timeout_captura = timeout
@@ -12,6 +13,10 @@ class RLCSampler:
         self.datos_raw = []
 
     def conectar(self):
+        #revisa en todos los puertos del pc
+        puertos = [p.device for p in serial.tools.list_ports.comports()]
+        self.puerto = self.puerto or (puertos[0] if puertos else None)
+        print(f"Puerto: {self.puerto}")
         self.ser = serial.Serial(self.puerto, self.baudios, timeout=1)
         time.sleep(0.3)  # estabilización ESP32
 
