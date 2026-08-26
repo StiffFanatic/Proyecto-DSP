@@ -17,6 +17,14 @@ Plataforma integrada de hardware y software para la captura a alta velocidad, ac
 
 ---
 
+## 📄 Informe Técnico y Documentación Completa
+
+El informe final de laboratorio y la documentación detallada del sistema se encuentran disponibles en la carpeta `docs/`:
+
+👉 **[PDF: Sistema de adquisición y análisis de señales en circuitos RLC mediante ESP32 y procesamiento en Python](docs/Sistema_de_adquisicion_y_analisis_de_senales_RLC.pdf)**
+
+---
+
 ## 📌 Descripción del Proyecto
 
 Este sistema implementa una plataforma de adquisición y análisis digital de señales optimizada para circuitos RLC. Un microcontrolador **ESP32** genera un pulso de excitación escalón (50 ms) y realiza un muestreo analógico de alta velocidad del voltaje de respuesta almacenando hasta 35,000 muestras en RAM durante un intervalo total de 100 ms.
